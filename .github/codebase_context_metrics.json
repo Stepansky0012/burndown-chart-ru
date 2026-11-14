@@ -1,0 +1,47 @@
+{
+  "last_updated": "2026-03-24",
+  "recommended_strategy": "strict-chunking",
+  "metrics": {
+    "total": {
+      "files": 864,
+      "lines": 234814,
+      "chars": 8288533,
+      "tokens": 2066794
+    },
+    "code": {
+      "files": 599,
+      "lines": 166382,
+      "chars": 5897790,
+      "tokens": 1470648
+    },
+    "docs": {
+      "files": 105,
+      "lines": 23537,
+      "chars": 756872,
+      "tokens": 188730
+    },
+    "tests": {
+      "files": 160,
+      "lines": 44895,
+      "chars": 1633871,
+      "tokens": 407415
+    },
+    "python": {
+      "files": 510,
+      "lines": 153454,
+      "chars": 5551361,
+      "tokens": 1384264
+    },
+    "frontend": {
+      "files": 89,
+      "lines": 12928,
+      "chars": 346429,
+      "tokens": 86384
+    }
+  },
+  "guidance": {
+    "max_lines_per_read": 500,
+    "use_semantic_search": true,
+    "focus_folders": ["data", "ui", "callbacks", "visualization"]
+  }
+}

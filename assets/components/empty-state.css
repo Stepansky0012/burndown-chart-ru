@@ -1,0 +1,102 @@
+/* ====================
+   EMPTY STATE
+   ==================== */
+
+/* ================================================================
+   Profile Empty State - First Profile Creation Guide
+   ================================================================ */
+
+.profile-empty-state-cta {
+  border-style: dashed;
+  border-color: var(--color-border-default, #d1d5db);
+}
+
+.profile-empty-state-cta h5 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-neutral-800);
+}
+
+.profile-empty-state-cta .btn {
+  min-height: 42px;
+}
+
+/* ================================================================
+   Unified Empty State Layout
+   ================================================================ */
+
+.empty-state-banner {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(248, 250, 252, 0.6) 100%);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-state-banner h4 {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-neutral-900);
+  letter-spacing: -0.01em;
+}
+
+.empty-state-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-semibold);
+  color: var(--color-neutral-900);
+  letter-spacing: -0.01em;
+}
+
+.empty-state-lead {
+  font-size: var(--text-base);
+  color: var(--color-neutral-600);
+}
+
+.empty-state-subtle {
+  font-size: var(--text-sm);
+  color: var(--color-neutral-500);
+}
+
+.empty-state-banner p {
+  font-size: var(--text-base);
+  color: var(--color-neutral-600);
+}
+
+.empty-state-card {
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.empty-state-card h5 {
+  font-size: var(--text-lg);
+  font-weight: var(--font-semibold);
+  color: var(--color-neutral-800);
+}
+
+.empty-state-card p {
+  color: var(--color-neutral-600);
+}
+
+.empty-state-alert {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+/* Standard centered empty state layout */
+.empty-state-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 5rem 1.25rem;
+  text-align: center;
+}
+
+.empty-state-icon {
+  color: var(--color-neutral-500);
+}
+
+.empty-state-text {
+  max-width: 32rem;
+}

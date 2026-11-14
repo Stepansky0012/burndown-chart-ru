@@ -1,0 +1,493 @@
+"""
+Settings Panel Component
+
+Collapsible panel for JIRA integration and import/export settings.
+Follows the same pattern as the Parameter Panel for consistent UX.
+
+User Story 6: Contextual Help System - Adds help icons to settings features.
+"""
+
+#######################################################################
+# IMPORTS
+#######################################################################
+import dash_bootstrap_components as dbc
+from dash import dcc, html
+
+from data.jira.query_profiles import load_query_profiles
+from data.persistence import load_app_settings
+from ui.button_utils import create_button
+from ui.delete_query_modal import create_delete_query_modal
+from ui.help_system import create_settings_tooltip
+from ui.integrated_query_management import create_integrated_query_management
+from ui.jira_config_modal import create_jira_config_button
+from ui.profile_modals import (
+    create_profile_deletion_modal,
+    create_profile_form_modal,
+)
+from ui.save_query_modal import create_save_query_modal
+from ui.unsaved_changes_modal import create_unsaved_changes_modal
+
+#######################################################################
+# HELPER FUNCTIONS
+#######################################################################
+
+
+def _get_default_jql_query():
+    """Get default JQL query from settings."""
+    try:
+        app_settings = load_app_settings()
+        return app_settings.get("jql_query", "project = JRASERVER")
+    except ImportError:
+        return "project = JRASERVER"
+
+
+def _get_default_jql_profile_id():
+    """
+    Get profile ID for dropdown initial value.
+
+    Priority:
+    1. If jql_query exactly matches a saved profile → return that profile ID
+    2. Otherwise → return empty (dropdown shows no selection)
+
+    This ensures the dropdown accurately reflects whether the current query
+    matches a saved profile or is a custom query.
+    """
+    try:
+        app_settings = load_app_settings()
+        jql_query = app_settings.get("jql_query", "")
+
+        if not jql_query:
+            return ""
+
+        # Try to match current JQL query to a saved profile
+        profiles = load_query_profiles()
+        normalized_query = jql_query.strip().lower()
+
+        for profile in profiles:
+            profile_jql = profile.get("jql", "")
+            if profile_jql.strip().lower() == normalized_query:
+                return profile.get("id", "")
+
+        # No match found - return empty (user has custom query)
+        return ""
+
+    except ImportError, Exception:
+        return ""
+
+
+def _get_query_profile_options():
+    """Get query profile dropdown options."""
+    try:
+        profiles = load_query_profiles()
+        options = []
+        for profile in profiles:
+            label = profile.get("name", "Unnamed")
+            if profile.get("is_default", False):
+                label += " [Default]"
+            options.append(
+                {
+                    "label": label,
+                    "value": profile.get("id", ""),
+                }
+            )
+        return options
+    except ImportError, Exception:
+        return []
+
+
+#######################################################################
+# SETTINGS PANEL EXPANDED CONTENT
+#######################################################################
+
+
+def create_settings_panel_expanded(id_suffix: str = "") -> html.Div:
+    """
+    Create expanded settings panel content with JIRA integration and import/export.
+
+    Args:
+        id_suffix: Suffix for unique IDs
+
+    Returns:
+        html.Div: Expanded panel content
+    """
+    align_items_center_mb2 = "d-flex align-items-center mb-2"
+    align_items_center_mb3 = "d-flex align-items-center mb-3"
+    form_label_small_muted = "form-label small text-muted mb-1"
+    status_text_class = "text-center text-muted small mt-2"
+    margin_left_quarter_rem = {"marginLeft": "0.25rem"}
+    min_height_40 = {"minHeight": "40px"}
+    jira_mappings_title = (
+        "Configure JIRA mappings (fields, projects, types, statuses, environment)"
+    )
+    force_refresh_hint = "(Hold 3s to force refresh)"
+    flow_dora_label = "Flow & DORA Metrics"
+    import_upload_icon_class = "fas fa-cloud-upload-alt fa-lg mb-1 text-primary"
+    jira_plug_icon_class = "fas fa-plug me-2 text-primary"
+    jira_mappings_icon_class = "fas fa-project-diagram me-1"
+    update_data_icon_class = "fas fa-sync-alt"
+    update_data_button_class = "w-100 long-press-button"
+    calculate_metrics_label = "Рассчитать метрики"
+    calculate_metrics_icon_class = "fas fa-calculator"
+    import_export_icon_class = "fas fa-exchange-alt me-2 text-success"
+    drop_file_text = "Перетащите файл или нажмите"
+    small_text_class = "mb-0 small"
+    font_size_small = {"fontSize": "0.75rem"}
+    font_size_small_normal = {"fontSize": "0.75rem", "fontWeight": "normal"}
+    upload_text_center_class = "text-center py-2"
+    upload_dropzone_style = {
+        "width": "100%",
+        "borderWidth": "2px",
+        "borderStyle": "dashed",
+        "borderRadius": "8px",
+        "borderColor": "#dee2e6",
+        "backgroundColor": "#f8f9fa",
+        "cursor": "pointer",
+    }
+
+    return html.Div(
+        [
+            dbc.Card(
+                [
+                    dbc.CardBody(
+                        [
+                            # Two column layout
+                            dbc.Row(
+                                [
+                                    # Left Column: JIRA Integration
+                                    dbc.Col(
+                                        [
+                                            # Header with config button
+                                            html.Div(
+                                                [
+                                                    html.I(
+                                                        className=jira_plug_icon_class
+                                                    ),
+                                                    html.Span(
+                                                        "Интеграция Jira",
+                                                        className="fw-bold",
+                                                    ),
+                                                    html.Span(
+                                                        create_settings_tooltip(
+                                                            "jira_integration",
+                                                            "jira-integration-help",
+                                                        ),
+                                                        style={"marginLeft": "0.25rem"},
+                                                    ),
+                                                ],
+                                                className=align_items_center_mb2,
+                                            ),
+                                            # Status indicator and config button row
+                                            html.Div(
+                                                [
+                                                    html.Div(
+                                                        id="jira-config-status-indicator",
+                                                        className="flex-grow-1 me-2",
+                                                        style={
+                                                            "minHeight": "2rem",
+                                                            "overflowX": "auto",
+                                                            "overflowY": "hidden",
+                                                            "whiteSpace": "nowrap",
+                                                        },
+                                                        children=[],
+                                                    ),
+                                                    html.Div(
+                                                        [
+                                                            dbc.Button(
+                                                                [
+                                                                    html.I(
+                                                                        className=jira_mappings_icon_class
+                                                                    ),
+                                                                    "Mappings",
+                                                                ],
+                                                                id="open-field-mapping-modal",
+                                                                color="info",
+                                                                size="sm",
+                                                                outline=True,
+                                                                className="me-2",
+                                                                title=jira_mappings_title,
+                                                            ),
+                                                            create_jira_config_button(
+                                                                compact=True
+                                                            ),
+                                                        ],
+                                                        className="d-flex",
+                                                        style={"flexShrink": "0"},
+                                                    ),
+                                                ],
+                                                className=align_items_center_mb3,
+                                            ),
+                                            # Integrated Query Management
+                                            # (JQL-first workflow)
+                                            create_integrated_query_management(),
+                                            # Hidden compatibility components
+                                            # for old JQL profile callbacks
+                                            html.Div(
+                                                [
+                                                    dcc.Dropdown(
+                                                        id="jira-query-profile-selector",
+                                                        options=[],
+                                                        value="",
+                                                        style={"display": "none"},
+                                                    ),
+                                                    dbc.Button(
+                                                        id="save-jql-query-button",
+                                                        style={"display": "none"},
+                                                    ),
+                                                    dbc.Button(
+                                                        id="edit-jql-query-button",
+                                                        style={"display": "none"},
+                                                    ),
+                                                    dbc.Button(
+                                                        id="delete-jql-query-button",
+                                                        style={"display": "none"},
+                                                    ),
+                                                ],
+                                                style={"display": "none"},
+                                            ),
+                                            # Action buttons below Saved Queries
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        [
+                                                            html.Label(
+                                                                [
+                                                                    "Fetch Data ",
+                                                                    html.Span(
+                                                                        force_refresh_hint,
+                                                                        className="text-muted",
+                                                                        style=font_size_small_normal,
+                                                                    ),
+                                                                    html.Span(
+                                                                        create_settings_tooltip(
+                                                                            "update_data",
+                                                                            "fetch-data-help",
+                                                                        ),
+                                                                        style=margin_left_quarter_rem,
+                                                                    ),
+                                                                ],
+                                                                className=form_label_small_muted,
+                                                            ),
+                                                            create_button(
+                                                                text="Обновить данные",
+                                                                id="update-data-unified",
+                                                                variant="primary",
+                                                                icon_class=update_data_icon_class,
+                                                                className=update_data_button_class,
+                                                                size="md",
+                                                            ),
+                                                            dcc.Store(
+                                                                id="force-refresh-store",
+                                                                data=False,
+                                                            ),
+                                                            dcc.Loading(
+                                                                id="update-data-loading",
+                                                                type="dot",
+                                                                color="#0d6efd",
+                                                                children=html.Div(
+                                                                    id="jira-cache-status",
+                                                                    className=status_text_class,
+                                                                    style=min_height_40,
+                                                                    # Fixed loading area
+                                                                    children="",
+                                                                ),
+                                                            ),
+                                                        ],
+                                                        md=6,
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            html.Label(
+                                                                [
+                                                                    flow_dora_label,
+                                                                    html.Span(
+                                                                        create_settings_tooltip(
+                                                                            "calculate_metrics",
+                                                                            "calculate-metrics-help",
+                                                                        ),
+                                                                        style=margin_left_quarter_rem,
+                                                                    ),
+                                                                ],
+                                                                className=form_label_small_muted,
+                                                            ),
+                                                            create_button(
+                                                                text=calculate_metrics_label,
+                                                                id="calculate-metrics-button",
+                                                                variant="primary",
+                                                                icon_class=calculate_metrics_icon_class,
+                                                                className="w-100",
+                                                                size="md",
+                                                            ),
+                                                            dcc.Loading(
+                                                                id="calculate-metrics-loading",
+                                                                type="dot",
+                                                                color="#0d6efd",
+                                                                children=html.Div(
+                                                                    id="calculate-metrics-status",
+                                                                    className=status_text_class,
+                                                                    style=min_height_40,
+                                                                    # Fixed loading area
+                                                                    children="",
+                                                                ),
+                                                            ),
+                                                        ],
+                                                        md=6,
+                                                    ),
+                                                ],
+                                                className="g-2",
+                                            ),
+                                        ],
+                                        md=8,
+                                        className="border-end",
+                                    ),
+                                    # Right Column: Import/Export
+                                    dbc.Col(
+                                        [
+                                            # Header - aligned with left column
+                                            html.Div(
+                                                [
+                                                    html.I(
+                                                        className=import_export_icon_class
+                                                    ),
+                                                    html.Span(
+                                                        "Import / Export",
+                                                        className="fw-bold",
+                                                    ),
+                                                    html.Span(
+                                                        create_settings_tooltip(
+                                                            "import_data",
+                                                            "import-export-help",
+                                                        ),
+                                                        style={"marginLeft": "0.25rem"},
+                                                    ),
+                                                ],
+                                                className=align_items_center_mb2,
+                                            ),
+                                            # Import - more compact
+                                            html.Div(
+                                                [
+                                                    html.Label(
+                                                        "Импорт данных",
+                                                        className=form_label_small_muted,
+                                                    ),
+                                                    dcc.Upload(
+                                                        id="upload-data",
+                                                        children=html.Div(
+                                                            [
+                                                                html.I(
+                                                                    className=import_upload_icon_class
+                                                                ),
+                                                                html.P(
+                                                                    drop_file_text,
+                                                                    className=small_text_class,
+                                                                ),
+                                                                html.Small(
+                                                                    "JSON/CSV",
+                                                                    className="text-muted",
+                                                                    style=font_size_small,
+                                                                ),
+                                                            ],
+                                                            className=upload_text_center_class,
+                                                        ),
+                                                        style=upload_dropzone_style,
+                                                        multiple=False,
+                                                    ),
+                                                ],
+                                                className="mb-3",
+                                            ),
+                                            # Export - more compact
+                                            html.Div(
+                                                [
+                                                    html.Label(
+                                                        "Экспорт данных",
+                                                        className=form_label_small_muted,
+                                                    ),
+                                                    create_button(
+                                                        text="Экспорт данных",
+                                                        id="export-project-data-button",
+                                                        variant="secondary",
+                                                        icon_class="fas fa-file-export",
+                                                        className="w-100",
+                                                    ),
+                                                    html.Div(
+                                                        dcc.Download(
+                                                            id="export-project-data-download"
+                                                        )
+                                                    ),
+                                                ],
+                                            ),
+                                        ],
+                                        md=4,
+                                    ),
+                                ],
+                                className="g-3",
+                            ),
+                            # Hidden components for callback compatibility
+                            html.Div(
+                                [
+                                    dcc.Dropdown(
+                                        id="jira-query-profile-selector-mobile",
+                                        options=[],
+                                        style={"display": "none"},
+                                    ),
+                                    html.Div(
+                                        id="query-profile-status",
+                                        style={"display": "none"},
+                                    ),
+                                    html.Button(
+                                        id="load-default-jql-query-button",
+                                        style={"display": "none"},
+                                    ),
+                                ],
+                                style={"display": "none"},
+                            ),
+                        ],
+                        style={"paddingTop": "0", "marginTop": "0"},
+                    )
+                ],
+                className="shadow-sm",
+            )
+        ],
+        className="settings-panel-expanded blue-accent-panel",
+    )
+
+
+#######################################################################
+# SETTINGS PANEL CONTAINER
+#######################################################################
+
+
+def create_settings_panel(is_open: bool = False, id_suffix: str = "") -> html.Div:
+    """
+    Create complete collapsible settings panel.
+
+    Args:
+        is_open: Whether panel should start in expanded state
+        id_suffix: Suffix for generating unique IDs
+
+    Returns:
+        html.Div: Complete settings panel with collapse functionality
+    """
+    collapse_id = f"settings-collapse{'-' + id_suffix if id_suffix else ''}"
+    panel_id = f"settings-panel{'-' + id_suffix if id_suffix else ''}"
+
+    return html.Div(
+        [
+            # Collapsible panel
+            dbc.Collapse(
+                create_settings_panel_expanded(id_suffix=id_suffix),
+                id=collapse_id,
+                is_open=is_open,
+                style={"marginTop": "-1rem"},
+            ),
+            # Profile management modals
+            create_profile_form_modal(),
+            create_profile_deletion_modal(),
+            # Integrated query management modals
+            create_save_query_modal(),
+            create_unsaved_changes_modal(),
+            create_delete_query_modal(),
+        ],
+        id=panel_id,
+        className="settings-panel-container",
+        style={"marginTop": "0rem"},
+    )

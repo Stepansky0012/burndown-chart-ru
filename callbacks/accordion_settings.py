@@ -1,0 +1,577 @@
+"""
+Accordion Settings Panel Callbacks
+
+Handles progressive disclosure and dependency enforcement for the new accordion-based
+settings panel (Feature 011: Profile-First Dependency Architecture).
+
+Callbacks:
+1. update_configuration_status - Track completion of each dependency step
+2. update_section_states - Enable/disable accordion sections based on dependencies
+3. update_section_titles - Add status icons to section titles
+4. enforce_query_save_before_data_ops - Disable data operations until query saved
+"""
+
+import logging
+
+import dash_bootstrap_components as dbc
+from dash import Input, Output, State, callback, html, no_update
+from dash.exceptions import PreventUpdate
+
+from data.persistence import load_app_settings, save_app_settings
+from data.persistence.factory import get_backend
+from data.query_manager import get_active_profile_id, update_query
+from data.task_progress import TaskProgress
+
+logger = logging.getLogger(__name__)
+
+
+@callback(
+    Output("configuration-status-store", "data"),
+    [
+        Input("profile-selector", "value"),
+        Input("jira-config-status-indicator", "children"),
+        Input("save-query-btn", "n_clicks"),
+        Input("query-selector", "value"),  # Track when query is selected
+    ],
+    prevent_initial_call=False,
+)
+def update_configuration_status(
+    profile_id, jira_status, save_query_clicks, selected_query
+):
+    """
+    Track configuration completion status for dependency chain.
+
+    Updates a status store that tracks which steps in the dependency chain
+    are complete. Used to enable/disable accordion sections.
+
+    Dependency Chain:
+    1. Profile exists (always enabled)
+    2. JIRA configured → enables Field Mappings & Query Management
+    3. Field mappings configured → recommended but not required
+    4. Query saved → enables Data Operations
+
+    Args:
+        profile_id: Currently active profile ID
+        jira_status: JIRA connection status indicator content
+        save_query_clicks: Number of times save query button clicked
+        selected_query: Currently selected query ID from dropdown
+
+    Returns:
+        dict: Configuration status with enabled/complete flags for each section
+    """
+    # Determine JIRA configuration status
+    # JIRA is configured if status indicator shows success
+    jira_configured = False
+    if jira_status:
+        jira_status_str = str(jira_status)
+        jira_configured = (
+            "success" in jira_status_str.lower() or "[OK]" in jira_status_str
+        )
+
+    # Determine if query is saved
+    # Query is considered saved if:
+    # 1. Save button has been clicked at least once, OR
+    # 2. An existing query is selected from dropdown (not "Create New")
+    query_saved = (save_query_clicks is not None and save_query_clicks > 0) or (
+        selected_query is not None
+        and selected_query != ""
+        and selected_query != "__create_new__"
+    )
+
+    status = {
+        "profile": {
+            "enabled": True,  # Always enabled
+            "complete": profile_id is not None,
+            "icon": "[OK]" if profile_id else "[Pending]",
+        },
+        "jira": {
+            "enabled": profile_id is not None,
+            "complete": jira_configured,
+            "icon": "[OK]"
+            if jira_configured
+            else ("[Pending]" if profile_id else "[Locked]"),
+        },
+        "fields": {
+            "enabled": jira_configured,  # Enabled when JIRA configured
+            "complete": False,  # Field mappings are optional
+            "icon": "[Pending]" if jira_configured else "[Locked]",
+        },
+        "queries": {
+            "enabled": jira_configured,  # Enabled when JIRA configured
+            "complete": query_saved,
+            "icon": "[OK]"
+            if query_saved
+            else ("[Pending]" if jira_configured else "[Locked]"),
+        },
+        "data_operations": {
+            "enabled": query_saved,  # Enabled when query saved
+            "complete": False,  # Always requires manual trigger
+            "icon": "[Pending]" if query_saved else "[Locked]",
+        },
+    }
+
+    logger.debug(
+        f"[Config Status] Profile: {status['profile']['icon']}, "
+        f"JIRA: {status['jira']['icon']}, "
+        f"Fields: {status['fields']['icon']}, "
+        f"Queries: {status['queries']['icon']}, "
+        f"Data: {status['data_operations']['icon']}"
+    )
+
+    return status
+
+
+@callback(
+    [
+        Output("jira-section-accordion", "class_name"),
+        Output("field-mapping-section-accordion", "class_name"),
+        Output("query-section-accordion", "class_name"),
+        Output("data-actions-section-accordion", "class_name"),
+    ],
+    Input("configuration-status-store", "data"),
+    prevent_initial_call=False,
+)
+def update_section_states(config_status):
+    """
+    Enable/disable accordion sections based on dependencies.
+
+    Adds 'disabled' class to sections that should not be accessible yet.
+    This provides visual feedback about which steps are blocked.
+
+    Args:
+        config_status: Configuration status dict from update_configuration_status
+
+    Returns:
+        tuple: CSS class names for each accordion section (4 sections)
+    """
+    if not config_status:
+        # No status available - disable all except profile
+        return (
+            "accordion-item-disabled",
+            "accordion-item-disabled",
+            "accordion-item-disabled",
+            "accordion-item-disabled",
+        )
+
+    # Enable sections based on their enabled flag
+    jira_class = "" if config_status["jira"]["enabled"] else "accordion-item-disabled"
+    fields_class = (
+        "" if config_status["fields"]["enabled"] else "accordion-item-disabled"
+    )
+    queries_class = (
+        "" if config_status["queries"]["enabled"] else "accordion-item-disabled"
+    )
+    data_class = (
+        "" if config_status["data_operations"]["enabled"] else "accordion-item-disabled"
+    )
+
+    return jira_class, fields_class, queries_class, data_class
+
+
+@callback(
+    [
+        Output("profile-section-accordion", "title"),
+        Output("jira-section-accordion", "title"),
+        Output("field-mapping-section-accordion", "title"),
+        Output("query-section-accordion", "title"),
+        Output("data-actions-section-accordion", "title"),
+    ],
+    Input("configuration-status-store", "data"),
+    prevent_initial_call=False,
+)
+def update_section_titles(config_status):
+    """
+    Update section titles with status indicators.
+
+    Adds visual indicators ([OK] [Pending] [Locked]) to accordion section titles
+    to show which steps are complete, in progress, or locked.
+
+    Args:
+        config_status: Configuration status dict
+
+    Returns:
+        tuple: Updated title strings for all 5 sections
+    """
+    if not config_status:
+        # Default titles with no status icons
+        return (
+            "1. Profile Settings",
+            "2. JIRA Configuration [Locked]",
+            "3. Field Mappings [Locked]",
+            "4. Query Management [Locked]",
+            "5. Data Operations [Locked]",
+        )
+
+    # Build titles with status icons
+    profile_title = f"1. Profile Settings {config_status['profile']['icon']}"
+    jira_title = f"2. JIRA Configuration {config_status['jira']['icon']}"
+    fields_title = f"3. Field Mappings {config_status['fields']['icon']}"
+    queries_title = f"4. Query Management {config_status['queries']['icon']}"
+    data_title = f"5. Data Operations {config_status['data_operations']['icon']}"
+
+    return profile_title, jira_title, fields_title, queries_title, data_title
+
+
+@callback(
+    [
+        Output("update-data-unified", "disabled", allow_duplicate=True),
+        Output("data-operations-alert", "children"),
+        Output("data-operations-alert", "is_open"),
+    ],
+    Input("configuration-status-store", "data"),
+    prevent_initial_call=True,  # Avoid overriding restoration callback
+)
+def enforce_query_save_before_data_ops(config_status):
+    """
+    Disable 'Update Data' button until query is saved.
+
+    This enforces the rule: "Query must be saved before it can be executed"
+    which prevents users from accidentally fetching data for unsaved queries.
+
+    NOTE: If a task is already in progress (for example, after app restart),
+    this callback will not override the restoration callback's button state.
+
+    Args:
+        config_status: Configuration status dict
+
+    Returns:
+        tuple: (button_disabled, alert_content, alert_is_open)
+    """
+    # Check if Update Data task is in progress - if so, don't override button state
+
+    active_task = TaskProgress.get_active_task()
+    if active_task and active_task.get("task_id") == "update_data":
+        # Task in progress - keep current button state.
+        # Restoration callback handles state transitions.
+
+        raise PreventUpdate
+
+    if not config_status:
+        # No status - disable button
+        return True, None, False
+
+    # Check if query is saved
+    query_saved = config_status.get("queries", {}).get("complete", False)
+
+    if query_saved:
+        # Query saved - enable data operations
+        return False, None, False
+
+    # Query not saved - show alert and disable button
+    alert = dbc.Alert(
+        [
+            html.I(className="fas fa-exclamation-triangle me-2"),
+            "Query must be saved before fetching data. ",
+            html.Strong("Click 'Save Query'"),
+            " in the Query Management section first.",
+        ],
+        color="warning",
+        className="mb-0",
+    )
+
+    return True, alert, True
+
+
+# Callback for profile settings save button
+@callback(
+    Output("profile-settings-status", "children"),
+    Input("save-profile-settings-btn", "n_clicks"),
+    [
+        State("profile-pert-factor-input", "value"),
+        State("profile-deadline-input", "value"),
+        State("profile-data-points-input", "value"),
+        State("profile-show-milestone-checkbox", "value"),
+        State("profile-milestone-input", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def save_profile_settings(
+    n_clicks, pert_factor, deadline, data_points, show_milestone, milestone_date
+):
+    """
+    Save profile-level settings to profile.json.
+
+    Updates the active profile's forecast settings and milestone configuration.
+
+    Args:
+        n_clicks: Number of times save button clicked
+        pert_factor: PERT multiplier (1.0-3.0)
+        deadline: Project deadline date (YYYY-MM-DD)
+        data_points: Number of weeks to show (4-52)
+        show_milestone: Whether to show milestone
+        milestone_date: Milestone date (YYYY-MM-DD)
+
+    Returns:
+        dbc.Alert: Success or error message
+    """
+    if not n_clicks:
+        return no_update
+
+    try:
+        # Save to profile.json with individual parameters
+        save_app_settings(
+            pert_factor=pert_factor or 1.2,
+            deadline=deadline,
+            data_points_count=data_points or 12,
+            show_milestone=show_milestone or False,
+            milestone=milestone_date if show_milestone else None,
+        )
+
+        logger.info(
+            f"[Profile Settings] Saved: pert_factor={pert_factor}, "
+            f"deadline={deadline}, data_points={data_points}, "
+            f"show_milestone={show_milestone}, milestone={milestone_date}"
+        )
+
+        return dbc.Alert(
+            [
+                html.I(className="fas fa-check-circle me-2"),
+                "Profile settings saved successfully!",
+            ],
+            color="success",
+            duration=3000,
+        )
+
+    except Exception as e:
+        logger.error(f"[Profile Settings] Error saving: {e}", exc_info=True)
+        return dbc.Alert(
+            [
+                html.I(className="fas fa-exclamation-circle me-2"),
+                f"Error saving settings: {e}",
+            ],
+            color="danger",
+        )
+
+
+# Callback to load profile settings into UI after import/profile switch
+@callback(
+    [
+        Output("profile-pert-factor-input", "value", allow_duplicate=True),
+        Output("profile-deadline-input", "value", allow_duplicate=True),
+        Output("profile-data-points-input", "value", allow_duplicate=True),
+        Output("profile-show-milestone-checkbox", "value", allow_duplicate=True),
+        Output("profile-milestone-input", "value", allow_duplicate=True),
+    ],
+    [
+        Input("metrics-refresh-trigger", "data"),  # After import
+        Input("profile-switch-trigger", "data"),  # After profile switch
+    ],
+    prevent_initial_call=True,
+)
+def load_profile_settings_after_import(metrics_trigger, profile_trigger):
+    """
+    Load profile settings into Profile Settings Card inputs after import/switch.
+
+    This ensures that when a profile is imported or switched, the Profile Settings
+    Card in the accordion shows the correct values.
+    """
+
+    try:
+        settings = load_app_settings()
+
+        if not settings:
+            logger.warning("[Profile Settings] No settings found, skipping UI update")
+            raise PreventUpdate
+
+        # Extract forecast settings
+        pert_factor = settings.get("pert_factor", 1.2)
+        deadline = settings.get("deadline", "")
+        data_points = settings.get("data_points_count", 12)
+        show_milestone = settings.get("show_milestone", False)
+        milestone = settings.get("milestone", "")
+
+        # Convert show_milestone boolean to checkbox value (bool expected, not list)
+        show_milestone_value = bool(show_milestone)
+
+        logger.info(
+            f"[Profile Settings] Loaded into UI: pert_factor={pert_factor}, "
+            f"deadline={deadline}, data_points={data_points}, "
+            f"show_milestone={show_milestone_value}, milestone={milestone}"
+        )
+
+        return (
+            pert_factor,
+            deadline or "",
+            data_points,
+            show_milestone_value,
+            milestone or "",
+        )
+
+    except PreventUpdate:
+        raise
+    except Exception as e:
+        logger.error(f"[Profile Settings] Error loading settings: {e}", exc_info=True)
+        raise PreventUpdate from e
+
+
+logger.info("[Callbacks] Accordion settings panel callbacks registered")
+
+
+@callback(
+    Output("query-jql-editor", "value"),
+    Input("query-selector", "value"),
+    prevent_initial_call=True,
+)
+def load_query_jql(query_id):
+    """
+    Load selected query's JQL into the editor.
+
+    When user selects a different query from the dropdown, populate
+    the JQL editor with that query's JQL string.
+
+    Args:
+        query_id: Selected query ID
+
+    Returns:
+        str: JQL query string for the selected query
+    """
+    if not query_id:
+        return ""
+
+    try:
+        profile_id = get_active_profile_id()
+        backend = get_backend()
+        query_data = backend.get_query(profile_id, query_id)
+
+        if not query_data:
+            logger.warning(f"[Query Load] Query not found in database: {query_id}")
+            return ""
+
+        jql = query_data.get("jql", "")
+        logger.info(f"[Query Load] Loaded JQL for query '{query_id}': {jql[:50]}...")
+
+        return jql
+
+    except Exception as e:
+        logger.error(
+            f"[Query Load] Error loading query '{query_id}': {e}", exc_info=True
+        )
+        return ""
+
+
+@callback(
+    Output("query-save-status", "children"),
+    Input("save-query-btn", "n_clicks"),
+    [
+        State("query-selector", "value"),
+        State("query-jql-editor", "value"),
+    ],
+    prevent_initial_call=True,
+)
+def save_query_changes(n_clicks, query_id, jql):
+    """
+    Save changes to the current query.
+
+    Updates the selected query's JQL in its query.json file.
+
+    Args:
+        n_clicks: Number of times save button clicked
+        query_id: Currently selected query ID
+        jql: JQL query string from editor
+
+    Returns:
+        dbc.Alert: Success or error message
+    """
+    if not n_clicks:
+        return no_update
+
+    if not query_id:
+        return dbc.Alert(
+            [
+                html.I(className="fas fa-exclamation-circle me-2"),
+                "No query selected",
+            ],
+            color="warning",
+            duration=3000,
+        )
+
+    if not jql or not jql.strip():
+        return dbc.Alert(
+            [
+                html.I(className="fas fa-exclamation-circle me-2"),
+                "JQL query cannot be empty",
+            ],
+            color="warning",
+            duration=3000,
+        )
+
+    try:
+        profile_id = get_active_profile_id()
+
+        # Update query with new JQL
+        success = update_query(profile_id, query_id, jql=jql.strip())
+
+        if success:
+            logger.info(f"[Query Save] Successfully updated query '{query_id}'")
+            return dbc.Alert(
+                [
+                    html.I(className="fas fa-check-circle me-2"),
+                    f"Query '{query_id}' saved successfully!",
+                ],
+                color="success",
+                duration=3000,
+            )
+        else:
+            return dbc.Alert(
+                [
+                    html.I(className="fas fa-exclamation-circle me-2"),
+                    "Failed to save query",
+                ],
+                color="danger",
+                duration=3000,
+            )
+
+    except Exception as e:
+        logger.error(
+            f"[Query Save] Error saving query '{query_id}': {e}", exc_info=True
+        )
+        return dbc.Alert(
+            [
+                html.I(className="fas fa-exclamation-circle me-2"),
+                f"Error saving query: {e}",
+            ],
+            color="danger",
+        )
+
+
+@callback(
+    Output("query-jql-editor", "value", allow_duplicate=True),
+    Input("cancel-query-edit-btn", "n_clicks"),
+    State("query-selector", "value"),
+    prevent_initial_call=True,
+)
+def cancel_query_edit(n_clicks, query_id):
+    """
+    Cancel query editing and reload original JQL.
+
+    Reloads the query's JQL from file, discarding any unsaved changes.
+
+    Args:
+        n_clicks: Number of times cancel button clicked
+        query_id: Currently selected query ID
+
+    Returns:
+        str: Original JQL query string
+    """
+    if not n_clicks or not query_id:
+        return no_update
+
+    try:
+        profile_id = get_active_profile_id()
+        backend = get_backend()
+        query_data = backend.get_query(profile_id, query_id)
+
+        if not query_data:
+            logger.warning(f"[Query Cancel] Query not found in database: {query_id}")
+            return no_update
+
+        jql = query_data.get("jql", "")
+        logger.info(f"[Query Cancel] Reloaded original JQL for query '{query_id}'")
+
+        return jql
+
+    except Exception as e:
+        logger.error(
+            f"[Query Cancel] Error reloading query '{query_id}': {e}", exc_info=True
+        )
+        return no_update

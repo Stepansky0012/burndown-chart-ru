@@ -1,0 +1,158 @@
+[tool.ruff]
+line-length = 88
+target-version = "py314"
+extend-exclude = [
+  ".beads",
+  ".continue",
+  ".venv",
+  "build",
+  "dist",
+  "cache",
+  "logs",
+  "profiles",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "PLC"]
+
+[tool.ruff.lint.per-file-ignores]
+# PLC0415: Tests legitimately use lazy imports inside test functions for isolation.
+"tests/**/*.py" = ["PLC0415"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.pip-tools]
+strip-extras = true
+
+[tool.pyright]
+pythonVersion = "3.14"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+exclude = [
+  ".venv",
+  "build",
+  "dist",
+  "cache",
+  "logs",
+  "profiles",
+  "node_modules",
+  "**/__pycache__",
+  "**/.*",
+]
+
+[tool.djlint]
+profile = "jinja"
+indent = 2
+max_line_length = 120
+format_css = false
+format_js = false
+# H006/H013: img alt handled by content authors
+# H016/H030/H031: title/meta live in report_head.html included partial
+# H021: inline styles are intentional for dynamic Jinja2 color values
+ignore = "H006,H013,H016,H021,H030,H031"
+
+[tool.bandit]
+# Directories excluded from security scanning
+exclude_dirs = [
+  ".venv",
+  "build",
+  "tests",
+  "cache",
+  "logs",
+  "profiles",
+  "node_modules",
+]
+# B311: standard pseudo-random generators are not used for security/crypto here
+skips = ["B311"]
+
+[tool.coverage.run]
+# Required for correct per-worker data collection when running with pytest-xdist -n auto
+parallel = true
+omit = [
+  # Pure Plotly figure builders — no testable logic without a live renderer
+  "visualization/bug_charts.py",
+  "visualization/chart_config.py",
+  "visualization/charts.py",
+  "visualization/elements.py",
+  "visualization/flow_charts.py",
+  "visualization/metric_trends.py",
+  # Pure Dash layout factories — return component trees, no business logic
+  "ui/aria_utils.py",
+  "ui/bug_charts.py",
+  "ui/budget_section.py",
+  "ui/budget_timeline_compact.py",
+  "ui/compact_metric_cards.py",
+  "ui/config_status_panel.py",
+  "ui/confirmation_modal.py",
+  "ui/dashboard/activity_quality.py",
+  "ui/dashboard/executive_summary.py",
+  "ui/dashboard/forecast_analytics.py",
+  "ui/dashboard/insights_engine.py",
+  "ui/dashboard/throughput_analytics.py",
+  "ui/dashboard/utils.py",
+  "ui/dora_flow_combined_dashboard.py",
+  "ui/error_states.py",
+  "ui/error_utils.py",
+  "ui/icon_mixin.py",
+  "ui/integrated_query_management.py",
+  "ui/jql_syntax_highlighter.py",
+  "ui/modern_dashboard_complete.py",
+  "ui/namespace_input.py",
+  "ui/settings_modal.py",
+  "ui/settings_panel.py",
+  "ui/sprint_tracker.py",
+  "ui/unsaved_changes_warning.py",
+  # Module-level wiring / infrastructure with no testable logic units
+  "data/changelog_processor.py",
+  "data/clear_metrics_cache.py",
+  "data/config_validation.py",
+  "data/documentation.py",
+  "data/issue_filtering.py",
+  "data/namespace_autocomplete.py",
+  "data/query_name_generator.py",
+  "data/report/data_loader.py",
+  "data/report/renderer.py",
+  "data/report_assets_embedder.py",
+  "data/smart_defaults.py",
+  "data/state_management.py",
+]
+
+[tool.vulture]
+min_confidence = 80
+# callbacks/ excluded: Dash requires callback function signatures to include all
+# registered Input/State args as positional params even when not used in the body.
+paths = ["data", "ui", "visualization", "app.py"]
+ignore_names = [
+  # re-exported from flow_metrics.py for backward compatibility
+  "FLOW_DISTRIBUTION_RECOMMENDATIONS",
+  "_normalize_work_type",
+  # __exit__ context manager protocol requires this parameter
+  "exc_tb",
+  # Signal handler protocol requires (signum, frame) even when frame is unused
+  "frame",
+  # Dash callback parameters: framework always passes all registered
+  # Input/State args positionally even when the body does not use them
+  "close_clicks",
+  # API-stable function parameters (ui/error_states.py create_error_boundary)
+  "fallback_action",
+  "fallback_message",
+  "fallback_title",
+  # Assigned but intentionally unused in conditional/destructuring patterns
+  "alert_data",
+  "cache_version",
+  "changelog_cache_version",
+  "chart_data",
+  "chart_title",
+  "confidence_level",
+  "content_hash",
+  "expanded_height",
+  "formula_name",
+  "production_value",
+  "restore_mode",
+  "show_performance_zones",
+  "x_range",
+]

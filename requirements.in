@@ -1,0 +1,37 @@
+# Production Dependencies Only
+# These are the packages required for the application to run.
+# Use requirements-dev.in for development/testing/build dependencies.
+#
+# Version constraints:
+#   kaleido>=1.0 -- v1 is pure Python (py3-none-any), much lighter than 0.2.x
+
+# Core Dash application dependencies
+dash[diskcache]>=4.0.0
+dash-bootstrap-components>=2.0.2
+plotly>=6.0.1
+kaleido>=1.0              # v1+ is pure Python wheel, no binary dependency
+
+# Data processing
+pandas>=3.0.1
+numpy>=2.2.5
+
+# Data validation and modeling
+pydantic>=2.0.0
+
+# Scientific computing (for statistical calculations)
+scipy>=1.11.0
+
+# Web requests and HTTP
+requests>=2.32.3
+
+# Production server
+waitress>=3.0.2
+
+# Clipboard support (cross-platform)
+pyperclip>=1.8.2
+
+# Process utilities (for faster update process detection)
+psutil>=6.0.0
+
+# System tray icon (for console-free executable control)
+pystray>=0.19.5

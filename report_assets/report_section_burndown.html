@@ -1,0 +1,31 @@
+<!-- Burndown Section -->
+{% if 'burndown' in sections %}
+  <div class="section">
+    <h2 class="section-title">
+      <i class="fas fa-chart-area"></i>
+      Анализ оставшейся работы
+    </h2>
+    {% if metrics.burndown.has_data %}
+      <h4 class="mt-4 mb-3">
+        <i class="fas fa-chart-line"></i> Диаграмма выгорания
+      </h4>
+      <div class="chart-container large">
+        <canvas id="burndownChart"></canvas>
+      </div>
+      {% if metrics.burndown.weekly_data %}
+        <h4 class="mt-4 mb-3">
+          <i class="fas fa-calendar-week"></i> Разбивка по неделям
+        </h4>
+        <div class="chart-container large">
+          <canvas id="weeklyBreakdownChart"></canvas>
+        </div>
+        <p class="text-muted mt-2 mb-0">
+          <i class="fas fa-info-circle me-1"></i>
+          <small>
+            ??????????? ?????? ? ????? ?? ???????, ???????? PERT ? EWMA, ? ????? ??????? ????? ?????????? ?????.
+          </small>
+        </p>
+      {% endif %}
+    {% endif %}
+  </div>
+{% endif %}

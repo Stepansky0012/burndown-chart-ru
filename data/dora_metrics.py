@@ -1,0 +1,46 @@
+"""Backward-compatible re-export shim for data.dora_metrics.
+
+All DORA metric logic now lives in the data/dora/ package.
+This module re-exports the full public API so existing callers continue
+to work without modification.
+"""
+
+from data.dora import (
+    CHANGE_FAILURE_RATE_TIERS,
+    DEPLOYMENT_FREQUENCY_TIERS,
+    LEAD_TIME_TIERS,
+    MTTR_TIERS,
+    _calculate_trend,
+    _classify_performance_tier,
+    _determine_performance_tier,
+    _extract_datetime_from_field_mapping,
+    _get_field_mappings,
+    _is_issue_completed,
+    calculate_change_failure_rate,
+    calculate_deployment_frequency,
+    calculate_lead_time_for_changes,
+    calculate_mean_time_to_recovery,
+    check_field_value_match,
+    is_production_environment,
+    parse_field_value_filter,
+)
+
+__all__ = [
+    "CHANGE_FAILURE_RATE_TIERS",
+    "DEPLOYMENT_FREQUENCY_TIERS",
+    "LEAD_TIME_TIERS",
+    "MTTR_TIERS",
+    "_calculate_trend",
+    "_classify_performance_tier",
+    "_determine_performance_tier",
+    "_extract_datetime_from_field_mapping",
+    "_get_field_mappings",
+    "_is_issue_completed",
+    "calculate_change_failure_rate",
+    "calculate_deployment_frequency",
+    "calculate_lead_time_for_changes",
+    "calculate_mean_time_to_recovery",
+    "check_field_value_match",
+    "is_production_environment",
+    "parse_field_value_filter",
+]

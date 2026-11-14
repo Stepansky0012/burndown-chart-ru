@@ -1,0 +1,99 @@
+{
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true,
+  "python.terminal.activateEnvironment": false,
+  "terminal.integrated.defaultProfile.windows": "Git Bash (.venv)",
+  "terminal.integrated.profiles.windows": {
+    "Git Bash (.venv)": {
+      "source": "Git Bash",
+      "args": ["--init-file", ".venv/Scripts/activate"],
+      "icon": "terminal-bash"
+    },
+    "Git Bash": {
+      "source": "Git Bash",
+      "icon": "terminal-bash"
+    },
+    "PowerShell (.venv)": {
+      "source": "PowerShell",
+      "args": ["-NoExit", "-Command", "& '.venv\\Scripts\\Activate.ps1'"]
+    },
+    "PowerShell": {
+      "source": "PowerShell"
+    }
+  },
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.ruff": "always",
+      "source.organizeImports.ruff": "always"
+    }
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[yaml]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tamasfe.even-better-toml",
+    "editor.formatOnSave": true
+  },
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.markdownlint": "always"
+    }
+  },
+  "[jinja-html]": {
+    "editor.defaultFormatter": "monosans.djlint",
+    "editor.formatOnSave": true
+  },
+  "markdownlint.config": {
+    "extends": ".markdownlint.json"
+  },
+  "json.schemas": [
+    {
+      "fileMatch": [".markdownlint.json"],
+      "url": "https://raw.githubusercontent.com/DavidAnson/markdownlint/v0.40.0/schema/markdownlint-config-schema.json"
+    }
+  ],
+  "files.associations": {
+    "**/report_assets/*.html": "jinja-html",
+    ".prettierignore": "ignore",
+    "**/.prettierignore": "ignore"
+  },
+  "html.validate.styles": false,
+  "html.validate.scripts": false,
+  "emmet.includeLanguages": {
+    "jinja-html": "html"
+  },
+  "sqltools.connections": [
+    {
+      "previewLimit": 50,
+      "driver": "SQLite",
+      "name": "Burndown Database",
+      "database": "profiles/burndown.db"
+    }
+  ],
+  "continue.enableTabAutocomplete": false,
+  "editor.inlineSuggest.enabled": true,
+  "editor.quickSuggestions": {
+    "other": true,
+    "comments": false,
+    "strings": true
+  },
+  "terminal.integrated.shellIntegration.enabled": true,
+  "terminal.integrated.shellIntegration.decorationsEnabled": "both"
+}

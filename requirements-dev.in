@@ -1,0 +1,37 @@
+# Development Dependencies
+# Includes all production dependencies plus development/testing/build tools.
+# 
+# Usage:
+#   pip-compile requirements-dev.in          # Generate requirements-dev.txt
+#   pip install -r requirements-dev.txt      # Install everything for development
+
+# Include all production dependencies
+-r requirements.txt
+
+# Testing dependencies
+pytest>=8.3.5  # Kaleido requires pytest>=9.0, allow newer versions
+pytest-cov>=6.1.1
+pytest-timeout>=2.0  # Enforce @pytest.mark.timeout() limits
+pytest-xdist>=3.0  # Parallel test execution (-n auto)
+playwright>=1.40.0
+
+# Build and packaging tools
+pyinstaller>=6.0.0  # Build standalone executables
+pillow>=10.0.0      # Icon generation for Windows executables
+pip-licenses>=5.0.0 # License auditing for THIRD_PARTY_LICENSES.txt
+PyYAML>=6.0.0       # Used by regenerate_changelog.py build script
+
+# Development tools
+pip-tools==7.5.3    # Dependency management (pip-compile)
+pre-commit>=4.2.0   # Shared git hooks for lint/format checks
+ruff>=0.12.10       # Python linting and formatting
+autopep8>=2.3.2     # Supplemental PEP 8 line-wrapping formatter for refactors
+djlint>=1.36.4      # Jinja/HTML linting and formatting
+pyright>=1.1.0      # Static type checker (same engine as Pylance/VS Code)
+pandas-stubs>=3.0.0 # Type stubs for pandas — eliminates false-positive pyright errors
+
+# Security and quality tools
+bandit>=1.8.0       # Python SAST security linter
+detect-secrets>=1.5 # Pre-commit credential/token scanner
+pip-audit>=2.7.0    # Dependency vulnerability scanning against OSV/PyPI advisories
+vulture>=2.11       # Dead code detection

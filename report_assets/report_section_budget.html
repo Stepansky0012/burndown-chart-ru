@@ -1,0 +1,11 @@
+﻿<!-- Budget Section -->
+{% if 'budget' in sections and metrics.budget.has_data %}
+  <div class="section">
+    <h2 class="section-title">
+      <i class="fas fa-money-bill-wave"></i>
+      ?????? ??????? ? ??????
+    </h2>
+    {% include "report_section_budget_overview.html" %}
+    {% include "report_section_budget_details.html" %}
+  </div>
+{% endif %}
