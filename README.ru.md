@@ -35,4 +35,8 @@ python -m venv .venv
 
 Обновления этой копии проверяются в `Stepansky0012/burndown-chart-ru`, чтобы обновление оригинала не затёрло перевод. Готовая Windows-сборка RU пока не выпускается: запуск из исходников описан выше.
 
+Сценарии GitHub Actions оригинала сохранены как справочные файлы в `docs/upstream-workflows/`. Автоматические проверки и выпуск сборок на GitHub в этой копии пока не подключены.
+
+Проверки локально: `.venv\Scripts\python.exe -m ruff check .` и `.venv\Scripts\python.exe -m pytest tests/unit/ui tests/unit/visualization -q`.
+
 Оригинальная документация: [readme.md](readme.md).
