@@ -1,209 +1,82 @@
-> **Русская версия:** [README.ru.md](README.ru.md). Запуск: `setup-ru.cmd`, затем `start-ru.cmd`.
+# Управление проектами: сроки, объём и прозрачная отчётность
 
-# Burndown🔥
+**Рабочее место руководителя проекта и фрилансера: от истории задач до прогноза завершения и разговора с заказчиком на основе данных.**
 
-[![python](https://img.shields.io/badge/Python-3.13-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
-[![version](https://img.shields.io/badge/version-2.15.3-blue.svg)](https://github.com/niksavis/burndown-chart/releases)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+Решение объединяет данные Jira, анализ выполнения работ и управленческие отчёты в локальном веб-интерфейсе. Показывает, сколько сделано, что осталось, как меняются требования и какие риски мешают уложиться в срок.
 
-**Forecast your project completion date.** Connect to JIRA and get automatic best/worst/likely scenarios based on your team's velocity. Track progress, spot bottlenecks, and generate shareable HTML reports - all running locally in your browser.
+![Дашборд управления проектом](docs/ru-dashboard.png)
 
-**Perfect for:** Project managers and team leads tracking agile projects.
+## Какие задачи решает
 
-## Key Features
+- **Контроль сроков.** Прогноз завершения по фактическому темпу команды, несколько сценариев и интервалы неопределённости.
+- **Контроль изменений.** Видимость новых требований и роста бэклога помогает обсуждать изменение состава поставки, сроков и стоимости работ.
+- **Подготовка статуса.** Единая сводка прогресса, рисков и показателей сокращает ручную сборку отчётности.
+- **Несколько заказов.** Отдельные профили и запросы позволяют переключаться между проектами и командами.
+- **Качество и поток работ.** Анализ ошибок и незавершённых задач помогает находить задержки в процессе.
 
-- **📊 Completion Forecasts** - Best case, worst case, and most likely dates based on your team's actual velocity
-- **📈 Project Health Score** - Single score (0-100) showing if you're on track with 6-dimensional analysis
-- **📋 Shareable Reports** - Generate standalone HTML reports with all charts (works offline)
-- **🔌 JIRA Integration** - Auto-syncs issues, smart caching only downloads what changed
-- **🤖 AI Analysis Ready** - Export privacy-safe summaries for ChatGPT/Claude analysis
-- **🔒 Multiple Projects** - Track different teams with separate profiles and settings
-- **📊 Industry Metrics** - DORA metrics (DevOps performance) and Flow metrics (team efficiency)
+## Пользовательский сценарий
 
-**All data stays local** - No cloud services, no tracking, no telemetry.
+1. Подключите Jira или импортируйте подготовленные данные проекта.
+2. Выберите проект, период истории и целевой срок завершения.
+3. Посмотрите выполненный и оставшийся объём, темп работ и прогноз.
+4. Сопоставьте рост требований, динамику ошибок и риски по срокам.
+5. Согласуйте с заказчиком приоритеты, состав ближайшей поставки или дату завершения.
+6. Сформируйте HTML-отчёт для встречи или регулярного статуса.
 
-## Download
+Например, к согласованному заказу постепенно добавляются новые функции. Дашборд помогает показать выполненную работу и увеличение объёма, а затем обосновать пересмотр плана на общих с заказчиком данных.
 
-**[📥 Download Latest Release](https://github.com/niksavis/burndown-chart/releases/latest)**
+## Преимущества интеграций
 
-**Windows Users:** Download the Windows ZIP package - standalone executable, no Python required
+| Возможность | Что получает пользователь |
+|---|---|
+| Jira и сохранённые запросы | Рабочий трекер становится источником фактов; меньше повторного ввода данных |
+| Обновление изменившихся задач и локальный кэш | Повторное получение данных без полной загрузки всей истории при каждом обновлении |
+| Настройка соответствия полей | Адаптация к структуре конкретного проекта и его оценкам трудоёмкости |
+| Импорт и экспорт профилей и данных | Перенос настроек и анализ подготовленных наборов без обязательного подключения Jira |
+| Автономные HTML-отчёты | Заказчик открывает отчёт без установки приложения |
+| Подготовка сводки для ИИ-анализа | Готовый контекст для дополнительного разбора в выбранном ИИ-инструменте; передачу выполняет пользователь |
+| Раздельные профили | Свои настройки и представления для нескольких команд или заказов |
 
-**All Other Platforms:** Download source code (zip/tar.gz) - requires Python 3.13+
+## Возможности приложения
 
-See installation instructions below for setup details.
+- Дашборд состояния проекта, выполненных задач и оставшейся работы.
+- Диаграммы выгорания и недельного темпа выполнения.
+- Прогнозы завершения и предупреждения об отклонении от дедлайна.
+- Контроль изменения объёма и появления новых задач.
+- Анализ ошибок, текущей работы и спринтов.
+- Метрики потока работ и эффективности поставки DORA.
+- Бюджетные показатели при заполненных финансовых настройках.
+- Выгрузка отчётов и данных для дальнейшего анализа.
 
-## Installation
+Доступность отдельных показателей зависит от полноты истории и настройки полей. Прогнозы используют PERT и экспоненциальное взвешивание. Расширенная диаграмма по Дорофееву пока не реализована.
 
-### Option 1: Windows (Standalone Executable)
+## Быстрый запуск в Windows
 
-**For non-technical users** - No Python installation required!
+Нужен Python 3.14.
 
-1. **Download** the latest Windows release from the [Releases page](https://github.com/niksavis/burndown-chart/releases/latest)
-2. **Extract** the ZIP file to a folder of your choice (e.g., `C:\Program Files\Burndown`)
-3. **Run** `Burndown\Burndown.exe` to start the application
-4. **Open** your browser to [http://127.0.0.1:8050](http://127.0.0.1:8050)
-5. **Optional**: Create a desktop shortcut to the EXE for easy access
-
-**Note:** Windows may show a security warning on first run. Click "More info" → "Run anyway" (the app is not signed).
-
-**Automatic Updates:** The app checks for updates automatically and notifies you when a new version is available. One-click download and install.
-
-### Option 2: All Platforms (From Source)
-
-**For technical users (Linux/macOS/Windows)** - Requires Python 3.13+
-
-1. **Download** the source code from the [Releases page](https://github.com/niksavis/burndown-chart/releases/latest)
-   - Click "Source code (zip)" or "Source code (tar.gz)"
-   - Or clone the repository: `git clone https://github.com/niksavis/burndown-chart.git`
-
-2. **Extract** and navigate to the project folder in terminal
-
-3. **Install** - Create a virtual environment and install dependencies:
-
-   **Windows:**
+1. Скачайте репозиторий или клонируйте его:
 
    ```powershell
-   python -m venv .venv
-   .venv\Scripts\activate
-   pip install -r requirements-dev.txt
+   git clone https://github.com/Stepansky0012/burndown-chart-ru.git
+   cd burndown-chart-ru
    ```
 
-   **Mac/Linux:**
+2. Запустите `setup-ru.cmd`: установятся зависимости и демонстрационный профиль.
+3. Запустите `start-ru.cmd`.
+4. Откройте [дашборд на своём компьютере](http://127.0.0.1:8051).
 
-   ```bash
-   python3 -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements-dev.txt
-   ```
+Приложение работает локально, база хранится в папке `profiles/`. Подключение Jira требует сетевого доступа к выбранному серверу. Готовая сборка в виде исполняемого файла пока не публикуется.
 
-4. **Start** - Run `python app.py`
+## Попробуйте без подключения Jira
 
-5. **Open** - Go to [http://127.0.0.1:8050](http://127.0.0.1:8050) in your browser
+В комплекте есть вымышленный проект разработки клиентского портала: **150 задач, 12 недель истории, 103 выполненные и 47 оставшихся задач**. Сценарий показывает рост требований, ошибки и снижение темпа перед целевой датой.
 
-**For developers:** Want to work with the latest code? Clone the `main` branch:
+Откройте вкладки **Дашборд → Выгорание → Изменение объёма → Анализ ошибок → Данные по неделям**. Для демонстрации не нужны токен и аккаунт Jira. Даты примера фиксированы; бюджет, история переходов, DORA и спринты отдельно в нём не моделируются.
 
-```bash
-git clone https://github.com/niksavis/burndown-chart.git
-cd burndown-chart
-# Follow installation steps above using requirements-dev.txt
-```
+## Документация
 
-**Note:** `requirements-dev.txt` includes testing/build tools. Use `requirements.txt` for production-only dependencies.
+[Инструкция по установке и работе](README.ru.md) содержит команды ручного запуска и проверки проекта.
 
-## Connecting to JIRA
+Основной интерфейс, графики и заголовки отчётов переведены на русский язык. В отдельных подробных подсказках и технических сообщениях ещё встречается английский текст. Автоматические сборки на GitHub пока не подключены.
 
-### Get Your JIRA Token
-
-1. Log into JIRA → Profile Settings → Security → Create API Token
-2. Copy the token somewhere safe
-
-**Note:** Token location varies by JIRA version (Cloud vs Data Center). Check with your admin if you can't find it.
-
-### Connect in the App
-
-1. **Settings** (top right) → **JIRA Configuration**
-2. Enter:
-   - **JIRA URL**: `https://yourcompany.atlassian.net`
-   - **API Token**: Paste your token
-   - **Query**: `project = MYPROJECT` (or try public test: `https://jira.atlassian.com` with query `project = JRASERVER`)
-3. **Fetch Metadata** → **Configure JIRA Mappings** → **Auto-Configure**
-4. Review the 5 tabs (the app auto-detects ~90% of fields) → **Save Mappings**
-5. **Update Data** → Wait for sync → Done!
-
-**Smart sync:** After first load, only downloads changed issues (fast!). Long-press Update Data for full refresh.
-
-## What You'll See
-
-### Dashboard
-
-- **Completion Forecast**: Best/worst/likely dates based on velocity
-- **Health Score** (0-100): Green (>80) = on track, Yellow (60-79) = watch closely, Red (<60) = needs attention
-- **Velocity Chart**: Items completed per week with trend
-- **Burndown Chart**: Remaining work vs. time with confidence bands
-
-### Flow Metrics
-
-Measures how work moves through your process:
-
-- **Velocity**: Items/week (stability indicator)
-- **Flow Time**: Start to done (cycle time)
-- **Efficiency**: Active work vs. waiting (25-40% is normal)
-- **Work Distribution**: Features vs. bugs vs. tech debt
-
-### DORA Metrics
-
-Industry-standard DevOps performance:
-
-- **Deployment Frequency**: Releases per day/week
-- **Lead Time**: Commit to production (days)
-- **Change Failure Rate**: % of releases with issues
-- **Recovery Time**: Hours to fix production issues
-
-**Learn more:** [Metrics Index](docs/metrics_index.md)
-
-## Common Tasks
-
-**Generate Reports:** Settings → Import/Export → Generate Report → Choose sections → Download HTML
-
-**Multiple Projects:** Use profile dropdown (top nav) to switch between teams instantly
-
-**Backup/Share Settings:** Settings → Import/Export → Export Profile (Configuration Only = small, Full Data = includes history)
-
-**AI Analysis:** Settings → Import/Export → AI Prompt → Generate (privacy-safe summary for ChatGPT/Claude)
-
-**Save Queries:** Track different views (e.g., "Sprint Backlog", "Bugs Only") - Settings → Query Management
-
-## Troubleshooting
-
-**Installation issues?**
-
-- Missing Python? [Download 3.13+](https://www.python.org/downloads/) and check "Add to PATH"
-- Missing packages? Activate environment first: `.venv\Scripts\activate` (Win) or `source .venv/bin/activate` (Mac)
-- Port 8050 taken? Run `python app.py --port 8060`
-
-**JIRA connection problems?**
-
-- Click **Fetch Metadata** to test connection
-- Regenerate token if expired (they do expire!)
-- Try public test first: `https://jira.atlassian.com` with query `project = JRASERVER`
-- Check query returns issues in JIRA web interface
-
-**No data showing?**
-
-- Run **Auto-Configure** in Settings → Configure JIRA Mappings
-- Check Status tab: Set "Done", "Closed" as completed statuses
-- For DORA: Check Environment tab for production identifiers
-- For Flow: Check Types tab for work type classification
-
-**Need fresh start?** Close app, delete `profiles` folder, restart
-
-## How It Works
-
-**Data Storage:** Everything stored locally in SQLite database (`profiles/burndown.db`). No cloud, no external services.
-
-**JIRA Sync:**
-
-- First sync: Downloads all issues matching your query (paginated, 100/page)
-- Subsequent syncs: Only downloads changed issues (delta updates)
-- Smart caching with 24-hour TTL
-
-**Security:**
-
-- API tokens stored locally only
-- No telemetry or tracking
-- Export excludes tokens by default
-- All processing happens on your machine
-
-**Tech Stack:** Python 3.13, Dash/Plotly (UI), SQLite (storage), Waitress (server)
-
-## Documentation
-
-📚 **[Complete Documentation](docs/readme.md)** - Metrics guides, configuration, and architecture reference
-
-For getting started with metrics, see the [Metrics Index](docs/metrics_index.md).
-
----
-
-**License:** MIT | **Python:** 3.13+ | **Version:** 2.15.3
-
-**[⬆ Back to Top](#burndown)**
+Условия использования и обязательные уведомления приведены в [лицензии MIT](LICENSE).
